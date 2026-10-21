@@ -1,0 +1,6 @@
+{
+  "name": "The Lost Kingdom",
+  "description": "A family-friendly 3D fantasy adventure RPG with quests, real-time combat, character classes, inventory, leveling, and adventurer guild.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
