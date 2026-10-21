@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "UserSave": {
+      "title": "UserSave",
+      "description": "Cloud RPG save slot for the player's hero, progress, inventory, and quests.",
+      "type": "object",
+      "properties": {
+        "saveId": {
+          "type": "string",
+          "description": "Unique identifier for this save slot."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the owning hero."
+        },
+        "heroName": {
+          "type": "string",
+          "description": "Name of the hero character."
+        },
+        "heroClass": {
+          "type": "string",
+          "description": "Character class: WARRIOR, MAGE, ARCHER, or HEALER."
+        },
+        "level": {
+          "type": "integer",
+          "description": "Current hero level."
+        },
+        "currentHp": {
+          "type": "integer",
+          "description": "Current HP."
+        },
+        "maxHp": {
+          "type": "integer",
+          "description": "Maximum HP."
+        },
+        "currentMp": {
+          "type": "integer",
+          "description": "Current MP."
+        },
+        "maxMp": {
+          "type": "integer",
+          "description": "Maximum MP."
+        },
+        "exp": {
+          "type": "integer",
+          "description": "Experience points."
+        },
+        "gold": {
+          "type": "integer",
+          "description": "Gold coins."
+        },
+        "gems": {
+          "type": "integer",
+          "description": "Astral gems."
+        },
+        "zone": {
+          "type": "string",
+          "description": "Current world zone identifier."
+        },
+        "savePayloadJson": {
+          "type": "string",
+          "description": "Full serialized save payload JSON string."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp; clients must submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp; clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["saveId", "userId", "heroName", "heroClass", "level", "zone", "createdAt", "updatedAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public hall of fame ranking entry for a champion.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the champion."
+        },
+        "heroName": {
+          "type": "string",
+          "description": "Hero name."
+        },
+        "heroClass": {
+          "type": "string",
+          "description": "Hero class."
+        },
+        "level": {
+          "type": "integer",
+          "description": "Hero level."
+        },
+        "bossTrophies": {
+          "type": "integer",
+          "description": "Bosses defeated count."
+        },
+        "dungeonClears": {
+          "type": "integer",
+          "description": "Dungeons cleared count."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp; clients must submit FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp; clients must submit FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "heroName", "heroClass", "level", "bossTrophies", "dungeonClears", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/saves/{saveId}": {
+      "schema": {
+        "$ref": "#/entities/UserSave"
+      },
+      "description": "Per-user cloud save slots."
+    },
+    "/leaderboard/{userId}": {
+      "schema": {
+        "$ref": "#/entities/LeaderboardEntry"
+      },
+      "description": "Global adventurer hall of fame leaderboard entries."
+    }
+  }
+}

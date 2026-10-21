@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all unknown paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for UserSave
+    function isValidUserSave(data) {
+      return data.saveId is string && data.saveId.size() <= 64 &&
+             data.userId is string && data.userId.size() <= 64 &&
+             data.heroName is string && data.heroName.size() >= 1 && data.heroName.size() <= 32 &&
+             data.heroClass in ['WARRIOR', 'MAGE', 'ARCHER', 'HEALER'] &&
+             data.level is int && data.level >= 1 && data.level <= 100 &&
+             data.zone is string && data.zone.size() <= 64 &&
+             (!('currentHp' in data) || (data.currentHp is int && data.currentHp >= 0)) &&
+             (!('maxHp' in data) || (data.maxHp is int && data.maxHp > 0)) &&
+             (!('currentMp' in data) || (data.currentMp is int && data.currentMp >= 0)) &&
+             (!('maxMp' in data) || (data.maxMp is int && data.maxMp >= 0)) &&
+             (!('exp' in data) || (data.exp is int && data.exp >= 0)) &&
+             (!('gold' in data) || (data.gold is int && data.gold >= 0)) &&
+             (!('gems' in data) || (data.gems is int && data.gems >= 0)) &&
+             (!('savePayloadJson' in data) || (data.savePayloadJson is string && data.savePayloadJson.size() <= 20000));
+    }
+
+    // Validation for LeaderboardEntry
+    function isValidLeaderboardEntry(data) {
+      return data.userId is string && data.userId.size() <= 64 &&
+             data.heroName is string && data.heroName.size() >= 1 && data.heroName.size() <= 32 &&
+             data.heroClass in ['WARRIOR', 'MAGE', 'ARCHER', 'HEALER'] &&
+             data.level is int && data.level >= 1 && data.level <= 100 &&
+             data.bossTrophies is int && data.bossTrophies >= 0 &&
+             data.dungeonClears is int && data.dungeonClears >= 0;
+    }
+
+    // User Save Slots
+    match /users/{userId}/saves/{saveId} {
+      allow get, list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(saveId) &&
+                       incoming().userId == userId &&
+                       incoming().saveId == saveId &&
+                       incoming().keys().hasAll(['saveId', 'userId', 'heroName', 'heroClass', 'level', 'zone', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       isValidUserSave(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(saveId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().saveId == existing().saveId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       isValidUserSave(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'heroName', 'heroClass', 'level', 'zone', 'currentHp', 'maxHp',
+                         'currentMp', 'maxMp', 'exp', 'gold', 'gems', 'savePayloadJson', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(saveId);
+    }
+
+    // Public Hall of Fame Leaderboard
+    match /leaderboard/{userId} {
+      allow get, list: if isSignedIn();
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == userId &&
+                       incoming().keys().hasAll(['userId', 'heroName', 'heroClass', 'level', 'bossTrophies', 'dungeonClears', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       isValidLeaderboardEntry(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().updatedAt is timestamp &&
+                       incoming().updatedAt <= request.time &&
+                       isValidLeaderboardEntry(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'heroName', 'heroClass', 'level', 'bossTrophies', 'dungeonClears', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+  }
+}
